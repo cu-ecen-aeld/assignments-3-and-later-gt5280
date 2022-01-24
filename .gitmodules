@@ -1,3 +1,6 @@
 [submodule "assignment-autotest"]
 	path = assignment-autotest
 	url = https://github.com/cu-ecen-5013/assignment-autotest.git
+[submodule "assignment-1-gt5280"]
+	path = assignment-1-gt5280
+	url = /home/nero2121/myproject/assignment-1-gt5280/
