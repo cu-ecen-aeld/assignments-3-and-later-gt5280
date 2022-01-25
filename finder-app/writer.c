@@ -17,8 +17,10 @@ int main(int argc,char* argv[])
 		const char *buf = argv[2];
 		
 		fd = open ( argv[1], O_WRONLY | O_CREAT, 0760 );
-		if (fd == -1)
+		if (fd == -1){
 			syslog(LOG_ERR, "open");
+			return 1;
+		}
 		else{
 			nr = write (fd, buf, strlen(buf));
 			syslog(LOG_DEBUG, "Writing %s to %s", buf, argv[1]);
@@ -29,8 +31,10 @@ int main(int argc,char* argv[])
 		if (close (fd) == -1)
 			syslog(LOG_ERR, "close");
     }
-	else
+	else{
 			syslog(LOG_DEBUG, "incorrect number of arguments");
+			return 1;
+	}
 
 		closelog();
 		
