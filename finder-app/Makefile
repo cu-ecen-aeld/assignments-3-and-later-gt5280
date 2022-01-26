@@ -8,7 +8,7 @@
 CFLAGS=-I.
  
 writermake: writer.c
-	$(CC) -o writer.o writer.c 
+	$(CC) -o writer writer.c 
 	
 .PHONY: clean
 
