@@ -30,9 +30,9 @@ bool do_system(const char *cmd)
 	int status;
 
 		status= system(cmd);
-		if (status == -1)
+		if (status < 0)
 			return false;
-		else if (WIFEXITED (status) ){	
+		else if (WIFEXITED (status) == 0){	
 			printf("system returned: %d\n", WIFEXITED (status) );
 			return true;
 		}
@@ -67,7 +67,7 @@ bool do_exec(int count, ...)
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
+    //command[count] = command[count];
 
 /*
  * TODO:
@@ -79,15 +79,10 @@ bool do_exec(int count, ...)
  *   
 */
 
-	char *ptr = command[1];
-	char *const argv[100];	
-	strncpy(*argv, ptr, 100);
-
 	pid_t pid;	
 	pid = fork();	
 		
-	if(pid==-1){		
-	//perror("fork");	
+	if(pid < 0){		
 	return false;
 	
 	}	
@@ -95,10 +90,9 @@ bool do_exec(int count, ...)
 	else if (pid == 0){
 		
 		int ret;
-		ret= execv(command[0] , argv);
+		ret= execv(command[0] , command);
 
-		if (ret == -1)
-		//perror ("execv");
+		if (ret < 0)
 		return false;
 		
 	}
@@ -106,9 +100,8 @@ bool do_exec(int count, ...)
 		int status, child;
 	
 		child = wait (&status);
-		if (child == -1)
+		if (child < 0)
 			return false;
-			//perror ("wait");		
 	
 		va_end(args);
 
@@ -133,7 +126,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
+    //command[count] = command[count];
 
 /*
  * TODO
@@ -146,30 +139,34 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 	pid_t pid;	
 	pid = fork();	
 		
-	if(pid==-1){
-		
-	//perror("fork");	
+	if(pid != 0)
 	return false;
-	
-	}	
 
 	else if (pid == 0){
 
 		int ret;
-		ret= execv( command[0], command);
 		
-		if (ret == -1)
-		//perror ("execv");
-		return false;
-		
+		if( outputfile != NULL ) {
+                int fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);     // write this open command
+                if (fd < 0)
+					return false;
+
+                if (dup2(fd, 1) < 0)         // write this command
+					return false;
+
+                close(fd);
+            }
+            if ((ret = execv(command[0], command)) < 0)      /* execute the command  */
+				return false;
+
 	}
 
-		int status, child;
+		int status;
 	
-		child = wait (&status);
-		if (child == -1)
-			return false;
-			//perror ("wait");
+		if (waitpid (pid, &status, 0) == -1)
+			return false;    
+			else if (WIFEXITED (status))        
+			return WEXITSTATUS (status);
 
     va_end(args);
     
@@ -182,12 +179,12 @@ int main (){
 
 	bool i;
 	
-	i= do_exec(2, "test/test_fork", "test_fork");
+	//i= do_exec(2, "test/test_fork", "test_fork");
 	
-	//i= do_exec_redirect("two.txt", 3, "/bin/sh", "-c", "cat one.txt > test/two.txt");
+	i= do_exec_redirect("two.txt", 3, "/bin/sh", "-c", "cat one.txt > test/two.txt");
 	
 	if (i)
 		printf("do_exec returned\n");
-	
+
 	return 0;}
-	*/
+*/	
