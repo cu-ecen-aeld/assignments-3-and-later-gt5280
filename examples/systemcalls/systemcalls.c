@@ -82,26 +82,26 @@ bool do_exec(int count, ...)
 	pid_t pid;	
 	pid = fork();	
 		
-	if(pid < 0){		
-	return false;
+	if(pid == -1){		
+		perror ("fork");
 	
 	}	
 	
 	else if (pid == 0){
 		
 		int ret;
-		ret= execv(command[0] , command);
-
-		if (ret < 0)
-		return false;
+		printf("I'm here\n");
 		
+		if ((ret = execv(command[0], command)) == -1  ) 
+				return false;
 	}
 
-		int status, child;
+		int status;
 	
-		child = wait (&status);
-		if (child < 0)
-			return false;
+		if (waitpid (pid, &status, 0) == -1)
+			return -1;    
+			else if (WIFEXITED (status))        
+			return WEXITSTATUS (status);
 	
 		va_end(args);
 
@@ -156,7 +156,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 
                 close(fd);
             }
-            if ((ret = execv(command[0], command)) < 0)      /* execute the command  */
+            if ((ret = execv(command[0], command)) != 0)  
 				return false;
 
 	}
@@ -173,21 +173,23 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     return true;
 }
 
-/*
+
  
 int main (){
 
 	bool i;
 	
+	i= do_exec(2, "echo", "Testing execv implementation with echo");
+	
 	//i= do_exec(2, "test/test_fork", "test_fork");
 	
-	i= do_exec_redirect("two.txt", 3, "/bin/sh", "-c", "cat one.txt > test/two.txt");
+	//i= do_exec_redirect("two.txt", 3, "/bin/sh", "-c", "cat one.txt > test/two.txt");
 	
-	if (i)
-		printf("do_exec returned\n");
+	if (i = false)
+		printf("do_exec returned false\n");
+	else
+		printf("do_exec returned true\n");
 
 	return 0;
 	
 	}
-
-*/	
