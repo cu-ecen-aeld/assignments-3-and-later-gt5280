@@ -174,6 +174,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 }
 
 /*
+ 
 int main (){
 
 	bool i;
@@ -188,4 +189,5 @@ int main (){
 	return 0;
 	
 	}
+
 */	
