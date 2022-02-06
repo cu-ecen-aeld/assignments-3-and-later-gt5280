@@ -9,6 +9,9 @@
 #include<stdint.h>
 #include<stdlib.h>
 #include<sys/wait.h>
+#include<errno.h>
+#include<sys/mman.h>
+
 
 /**
  * @param cmd the command to execute with system()
@@ -60,6 +63,7 @@ bool do_exec(int count, ...)
     va_start(args, count);
     char * command[count+1];
     int i;
+
     for(i=0; i<count; i++)
     {
         command[i] = va_arg(args, char *);
@@ -78,34 +82,24 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *   
 */
-
+	int status, ret;
 	pid_t pid;	
 	pid = fork();	
-		
-	if(pid == -1){		
-		perror ("fork");
-	
-	}	
-	
-	else if (pid == 0){
-		
-		int ret;
-		printf("I'm here\n");
-		
-		if ((ret = execv(command[0], command)) == -1  ) 
-				return false;
-	}
 
-		int status;
-	
-		if (waitpid (pid, &status, 0) == -1)
-			return -1;    
-			else if (WIFEXITED (status))        
-			return WEXITSTATUS (status);
-	
-		va_end(args);
+if (pid==0){
+	ret = execv(command[0], command);
+	if (ret == -1)
+		return false;
+}
 
-    return true;
+else if (pid > 0)
+	waitpid (pid, &status, 0);
+	
+else if (pid == -1)
+	perror("fork");
+
+return true;
+
 }
 
 /**
@@ -135,12 +129,12 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *   The rest of the behaviour is same as do_exec()
  *   
 */
-
+	bool k= true;
 	pid_t pid;	
 	pid = fork();	
 		
-	if(pid != 0)
-	return false;
+	if(pid == -1)
+		perror ("fork");
 
 	else if (pid == 0){
 
@@ -148,48 +142,67 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 		
 		if( outputfile != NULL ) {
                 int fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);     // write this open command
-                if (fd < 0)
-					return false;
+                if (fd == -1){
+					printf("open failed for file %s", "redirect_file_may_be_null");
+					exit(EXIT_FAILURE);
+				}
 
-                if (dup2(fd, 1) < 0)         // write this command
-					return false;
-
+                if (dup2(fd, 1) < 0) {
+					perror("dup2"); //abort();
+					exit(EXIT_FAILURE);
+				}
                 close(fd);
             }
-            if ((ret = execv(command[0], command)) != 0)  
-				return false;
+            if ((ret = execv(command[0], command)) == -1) { 
+				k= false;
+				//return false;
+				printf("*** ERROR: exec failed with return value %d\n",ret);
+                exit(EXIT_FAILURE);
 
 	}
 
 		int status;
 	
-		if (waitpid (pid, &status, 0) == -1)
-			return false;    
-			else if (WIFEXITED (status))        
-			return WEXITSTATUS (status);
+		if (waitpid (pid, &status, -1) == -1)
+			//return false;    
+		exit(EXIT_FAILURE);
+			//else if (WIFEXITED (status))        
+			//return WEXITSTATUS (status);
+		
+	}
 
     va_end(args);
-    
+	
+	if(k == false){
+	return false;
+ //exit(EXIT_FAILURE);
+	}
+	else    
     return true;
 }
 
-
- 
+/*
 int main (){
 
 	bool i;
 	
 	i= do_exec(2, "echo", "Testing execv implementation with echo");
 	
-	//i= do_exec(2, "test/test_fork", "test_fork");
+	//i= do_exec(3, "/usr/bin/test","-f","/bin/echo");
 	
 	//i= do_exec_redirect("two.txt", 3, "/bin/sh", "-c", "cat one.txt > test/two.txt");
 	
-	if (i = false)
+	if (i == false){
 		printf("do_exec returned false\n");
-	else
+		return 0;
+	}
+	else{
 		printf("do_exec returned true\n");
 
 	return 0;
+	}
+	
 	
 	}
+	
+*/
