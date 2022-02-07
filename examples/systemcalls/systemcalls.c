@@ -10,7 +10,8 @@
 #include<stdlib.h>
 #include<sys/wait.h>
 #include<errno.h>
-#include<sys/mman.h>
+#include<stdbool.h>
+
 
 
 /**
@@ -82,23 +83,25 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *   
 */
-	int status, ret;
+	int status;
 	pid_t pid;	
 	pid = fork();	
 
 if (pid==0){
-	ret = execv(command[0], command);
-	if (ret == -1)
-		return false;
+	execv(command[0], command);
+		exit(EXIT_FAILURE);
 }
 
-else if (pid > 0)
+else if (pid > 0)	
 	waitpid (pid, &status, 0);
 	
 else if (pid == -1)
 	perror("fork");
 
-return true;
+if (WEXITSTATUS(status))
+	return false;
+else
+	return true;
 
 }
 
@@ -129,64 +132,55 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *   The rest of the behaviour is same as do_exec()
  *   
 */
-	bool k= true;
 	pid_t pid;	
 	pid = fork();	
 		
 	if(pid == -1)
 		perror ("fork");
 
-	else if (pid == 0){
-
-		int ret;
+	if (pid == 0){
 		
 		if( outputfile != NULL ) {
-                int fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);     // write this open command
-                if (fd == -1){
-					printf("open failed for file %s", "redirect_file_may_be_null");
-					exit(EXIT_FAILURE);
-				}
+                int fd = open( outputfile, O_WRONLY | O_TRUNC | O_CREAT, 0644 ); 
+				
+                if (fd == -1)
+					perror ("open");
 
-                if (dup2(fd, 1) < 0) {
-					perror("dup2"); //abort();
-					exit(EXIT_FAILURE);
-				}
-                close(fd);
+                if (dup2(fd, 1) < 0) 
+					perror("dup2"); 
+				
+				close(fd);
             }
-            if ((ret = execv(command[0], command)) == -1) { 
-				k= false;
-				//return false;
-				printf("*** ERROR: exec failed with return value %d\n",ret);
-                exit(EXIT_FAILURE);
-
 	}
+			
+            else if (pid >0){
+				execv(command[0], command);
+                exit(EXIT_FAILURE);
+			}
 
+   
+		va_end(args);
+		
 		int status;
 	
-		if (waitpid (pid, &status, -1) == -1)
-			//return false;    
-		exit(EXIT_FAILURE);
-			//else if (WIFEXITED (status))        
-			//return WEXITSTATUS (status);
+		waitpid (pid, &status, -1);
 		
-	}
-
-    va_end(args);
-	
-	if(k == false){
-	return false;
- //exit(EXIT_FAILURE);
-	}
-	else    
-    return true;
+		if (WIFEXITED (status))        
+			return false;
+		else 
+			return true;
 }
+
 
 /*
 int main (){
 
 	bool i;
 	
-	i= do_exec(2, "echo", "Testing execv implementation with echo");
+	do_exec_redirect("~/myproject/assignment-1-gt5280/testfile.txt", 2, "/bin/echo", "home is $HOME");
+	char *test_string = malloc( sizeof(char) * (25) );
+	
+	//i= do_exec(2, "echo", "Testing execv implementation with echo");
 	
 	//i= do_exec(3, "/usr/bin/test","-f","/bin/echo");
 	
