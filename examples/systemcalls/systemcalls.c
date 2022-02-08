@@ -132,47 +132,48 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *   The rest of the behaviour is same as do_exec()
  *   
 */
-	pid_t pid;	
+	pid_t pid, wpid;	
+	int status;
+	
+
+     int fd = open( outputfile, O_WRONLY | O_TRUNC | O_CREAT, 0644 ); 
+	if ( fd== -1 )
+		return false;
+
 	pid = fork();	
 		
-	if(pid == -1)
+	if(pid == -1){
 		perror ("fork");
-
-	if (pid == 0){
-		
-		if( outputfile != NULL ) {
-                int fd = open( outputfile, O_WRONLY | O_TRUNC | O_CREAT, 0644 ); 
-				
-                if (fd == -1)
-					perror ("open");
-
-                if (dup2(fd, 1) < 0) 
-					perror("dup2"); 
-				
-				close(fd);
-            }
+		return false;
 	}
-			
-            else if (pid >0){
-				execv(command[0], command);
-                exit(EXIT_FAILURE);
-			}
+	else if (pid == 0){
 
+                if (dup2(fd, 1) < 0) {
+					perror("dup2"); 
+					return false;
+				}
+				
+				execv(command[0], command);
+                exit(EXIT_FAILURE);				
+            }
+	else{
+				close(fd);
+				wpid = waitpid (pid, &status, 0);
+
+				if(wpid == -1)
+					return false;
+				
+				if (! WIFEXITED (status) || WEXITSTATUS(status))        
+					return false;
+	}
    
 		va_end(args);
 		
-		int status;
-	
-		waitpid (pid, &status, -1);
-		
-		if (WIFEXITED (status))        
-			return false;
-		else 
-			return true;
+		return true;
 }
 
-
 /*
+
 int main (){
 
 	bool i;
