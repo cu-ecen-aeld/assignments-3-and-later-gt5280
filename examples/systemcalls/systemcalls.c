@@ -84,19 +84,23 @@ bool do_exec(int count, ...)
  *   
 */
 	int status;
-	pid_t pid;	
+	pid_t pid, wpid;	
 	pid = fork();	
 
 if (pid==0){
 	execv(command[0], command);
+		perror("ERROR execv");
 		exit(EXIT_FAILURE);
 }
 
-else if (pid > 0)	
-	waitpid (pid, &status, 0);
+else if (pid > 0){	
+	wpid= waitpid (pid, &status, 0);
+	if(wpid == -1)
+		perror("ERROR waitpid");
+}
 	
 else if (pid == -1)
-	perror("fork");
+	perror("ERROR fork");
 
 if (WEXITSTATUS(status))
 	return false;
@@ -143,25 +147,28 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 	pid = fork();	
 		
 	if(pid == -1){
-		perror ("fork");
+		perror ("ERROR fork");
 		return false;
 	}
 	else if (pid == 0){
 
                 if (dup2(fd, 1) < 0) {
-					perror("dup2"); 
+					perror("ERROR dup2"); 
 					return false;
 				}
 				
 				execv(command[0], command);
+				perror("ERROR execv");
                 exit(EXIT_FAILURE);				
             }
 	else{
 				close(fd);
 				wpid = waitpid (pid, &status, 0);
 
-				if(wpid == -1)
+				if(wpid == -1){
+					perror("ERROR waitpid");
 					return false;
+				}
 				
 				if (! WIFEXITED (status) || WEXITSTATUS(status))        
 					return false;
