@@ -21,10 +21,12 @@ else
 	OUTDIR=$1
 	echo "Using passed directory ${OUTDIR} for output"
 fi
-if [ ! -d "${OUTDIR}" ]
+
+#if [ ! -d "${OUTDIR}" ]
 mkdir -p ${OUTDIR}
-else
+#else
 cd "$OUTDIR"
+
 if [ ! -d "${OUTDIR}/linux-stable" ]; 
 then
     #Clone only if the repository does not exist.
@@ -58,7 +60,7 @@ fi
 mkdir rootfs
 cd rootfs
 mkdir bin dev etc home lib proc sbin sys tmp usr va var
-mkdir bin usr/bin usr/sbin usr/lib
+mkdir usr/bin usr/sbin usr/lib
 mkdir -p var/log
 sudo chown -R root:root *
 
@@ -78,7 +80,7 @@ git clone git://busybox.net/busybox.git
 else
     cd busybox
 
-sudo make ARCH=arm64 CROSS_COMPILE=/usr/local/arm-cross-compiler/install/gcc-arm-10.2-2020.11-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu- install CONFIG_PREFIX=/home/nero2121/myproject/assignment-1-gt5280/outdir/rootfs
+sudo make ARCH=arm64 CROSS_COMPILE=/usr/local/arm-cross-compiler/install/gcc-arm-10.2-2020.11-x86_64-aarch64-none-linux-gnu/bin/aarch64-none-linux-gnu- install CONFIG_PREFIX=${OUTDIR}/rootfs
 
 cd ${OUTDIR}/rootfs
 
@@ -99,15 +101,15 @@ sudo cp -a /usr/local/arm-cross-compiler/install/gcc-arm-10.2-2020.11-x86_64-aar
 
 
 # TODO: Add library dependencies to rootfs
-
-#sudo mknod -m 666 dev/null c 1 3
-#sudo mknod -m 600 dev/console c 5 1
+sudo mknod -m 666 dev/null c 1 3
+sudo mknod -m 600 dev/console c 5 1
 
 # TODO: Make device nodes
 
-#cd ${OUTDIR}/linux-stable
+cd ${OUTDIR}/linux-stable
 
-#sudo make -j4 ARCH=arm64 CROSS_COMPILE=aarch64-none-linux-gnu- INSTALL_MOD_PATH=/home/nero2121/myproject/assignment-1-gt5280/outdir/linux-stable modules_install
+sudo sudo make -j4 ARCH=arm64 CROSS_COMPILE=aarch64-none-linux-gnu- INSTALL_MOD_PATH=${OUTDIR}/linux-stable modules_install
+
 
 # TODO: Clean and build the writer utility
 
@@ -117,11 +119,11 @@ sudo cp -a /usr/local/arm-cross-compiler/install/gcc-arm-10.2-2020.11-x86_64-aar
  
 # TODO: Chown the root directory
 
-#cd ${OUTDIR}/rootfs
-#sudo chown -R root:root *
-#find . | cpio -H newc -ov --owner root:root > ../initramfs.cpio
-#cd ..
-#zip initramfs.cpio 
+cd ${OUTDIR}/rootfs
+sudo chown -R root:root *
+find . | cpio -H newc -ov --owner root:root > ../initramfs.cpio
+cd ..
+gzip initramfs.cpio 
 
 
 # TODO: Create initramfs.cpio.gz
